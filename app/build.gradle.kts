@@ -8,9 +8,14 @@ android {
     namespace = "com.vayunmathur.pdf"
     compileSdk = 36
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "com.vayunmathur.pdf"
-        minSdk = 36
+        minSdk = 31
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
