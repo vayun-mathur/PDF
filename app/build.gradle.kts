@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.vayunmathur.pdf"
-        minSdk = 31
+        minSdk = 35
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
