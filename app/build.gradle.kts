@@ -45,9 +45,9 @@ android {
 }
 
 dependencies {
-    implementation("androidx.pdf:pdf-viewer:1.0.0-alpha11")
-    implementation("androidx.pdf:pdf-compose:1.0.0-alpha11")
-    implementation("androidx.pdf:pdf-document-service:1.0.0-alpha11")
+    implementation(libs.androidx.pdf.viewer)
+    implementation(libs.androidx.pdf.compose)
+    implementation(libs.androidx.pdf.document.service)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -8,9 +8,13 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
 composeBom = "2024.09.00"
+pdfViewer = "1.0.0-alpha11"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-pdf-compose = { module = "androidx.pdf:pdf-compose", version.ref = "pdfViewer" }
+androidx-pdf-document-service = { module = "androidx.pdf:pdf-document-service", version.ref = "pdfViewer" }
+androidx-pdf-viewer = { module = "androidx.pdf:pdf-viewer", version.ref = "pdfViewer" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
