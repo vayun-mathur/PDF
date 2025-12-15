@@ -17,12 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,10 +45,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.core.util.forEach
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPasswordException
 import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.SandboxedPdfLoader
@@ -74,7 +73,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var data by rememberSaveable { mutableStateOf(data) }
+            var password: String? by rememberSaveable { mutableStateOf(null) }
             var pdfDocument by remember { mutableStateOf<PdfDocument?>(null) }
+            var showPasswordDialog by remember { mutableStateOf(false) }
+            var passwordError by remember { mutableStateOf<String?>(null) }
+            val scope = rememberCoroutineScope()
 
             val filePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                 uri?.let {
@@ -88,10 +91,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            LaunchedEffect(data) {
+            LaunchedEffect(data, password) {
                 if(data != null) {
                     delay(1000)
-                    pdfDocument = pdfLoader.openDocument(data!!)
+                    try {
+                        pdfDocument = pdfLoader.openDocument(data!!, password)
+                    } catch(e: PdfPasswordException) {
+                        if(password != null) {
+                            passwordError = "Incorrect password. Please try again."
+                        }
+                        showPasswordDialog = true
+                    }
                 }
             }
 
@@ -99,6 +109,16 @@ class MainActivity : ComponentActivity() {
                 pdfDocument?.let {
                     PdfViewerScreen(it)
                 } ?: Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+
+                if (showPasswordDialog) {
+                    PasswordDialog(
+                        errorMessage = passwordError,
+                        onPasswordEntered = {
+                            password = it
+                            showPasswordDialog = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -167,7 +187,7 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
                     IconButton({
                         showSearchBar = true
                     }) {
-                        Icon(Icons.Default.Search, null)
+                        Icon(painterResource(R.drawable.search_24px), null)
                     }
                     IconButton({
                         val intent = Intent(Intent.ACTION_SEND)
@@ -175,7 +195,7 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
                         intent.putExtra(Intent.EXTRA_STREAM, pdfDocument.uri)
                         context.startActivity(intent)
                     }) {
-                        Icon(Icons.Default.Share, null)
+                        Icon(painterResource(R.drawable.share_24px), null)
                     }
                 } else {
                     if (searchResults.isNotEmpty()) {
@@ -205,13 +225,13 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
                         if (searchIndex > 0)
                             searchIndex--
                     }) {
-                        Icon(Icons.Default.KeyboardArrowUp, null)
+                        Icon(painterResource(R.drawable.keyboard_arrow_up_24px), null)
                     }
                     SmallFloatingActionButton({
                         if (searchIndex < searchResults.size - 1)
                             searchIndex++
                     }) {
-                        Icon(Icons.Default.KeyboardArrowDown, null)
+                        Icon(painterResource(R.drawable.keyboard_arrow_down_24px), null)
                     }
                 }
             }
@@ -225,4 +245,38 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
             }
         }
     }
+}
+
+@Composable
+fun PasswordDialog(
+    onPasswordEntered: (String) -> Unit,
+    errorMessage: String? = null
+) {
+    var password by rememberSaveable { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { /* Prevent dismissing by clicking outside */ },
+        title = { Text("Password Required") },
+        text = {
+            Column {
+                Text("This PDF is password protected. Please enter the password.")
+                if (errorMessage != null) {
+                    Text(errorMessage, color = MaterialTheme.colorScheme.error)
+                }
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    singleLine = true,
+                    isError = errorMessage != null
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onPasswordEntered(password) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = null
+    )
 }
