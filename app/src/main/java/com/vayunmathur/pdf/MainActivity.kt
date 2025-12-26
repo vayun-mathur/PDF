@@ -42,11 +42,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.center
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toOffset
 import androidx.core.util.forEach
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.pdf.PdfDocument
@@ -139,6 +147,28 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
     BackHandler(showSearchBar) {
         showSearchBar = false
         searchResults = emptyList()
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(pdfDocument.uri) {
+        coroutineScope.launch {
+            delay(500)
+            println(pdfDocument.uri)
+            val restored = PdfStateStore.restore(context, pdfDocument.uri)
+            if (restored != null) {
+                restored(pdfState)
+            }
+        }
+    }
+
+    var center by remember { mutableStateOf(Offset.Zero) }
+
+    LaunchedEffect(Unit) {
+        while(true) {
+            delay(2000)
+            PdfStateStore.save(context, pdfDocument.uri, center, pdfState)
+        }
     }
 
     fun search() {
@@ -238,7 +268,9 @@ fun PdfViewerScreen(pdfDocument: PdfDocument) {
         }
     ) { innerPadding ->
         Column(Modifier.padding(innerPadding)) {
-            PdfViewer(pdfDocument, pdfState) { uri ->
+            PdfViewer(pdfDocument, pdfState, Modifier.onGloballyPositioned { coordinates ->
+                center = coordinates.size.center.toOffset()
+            }) { uri ->
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 context.startActivity(intent)
                 true
